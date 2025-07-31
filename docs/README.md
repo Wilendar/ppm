@@ -1,0 +1,1 @@
+Katalog docs zawiera dodatkową dokumentację projektu PPM, uzupełniającą informacje z katalogu .kiro/.

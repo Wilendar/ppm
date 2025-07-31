@@ -1,0 +1,1 @@
+Katalog backend zawiera API oraz zadania w tle (worker jobs) aplikacji PPM.
