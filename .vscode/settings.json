@@ -1,0 +1,132 @@
+{
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true,
+    "source.organizeImports": true
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  
+  "files.associations": {
+    "*.md": "markdown",
+    "*.prisma": "prisma",
+    ".env*": "dotenv"
+  },
+  
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  },
+  
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.git": true,
+    "**/coverage": true,
+    "**/logs": true,
+    "**/uploads": true
+  },
+  
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.git": false,
+    "**/coverage": true
+  },
+  
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/coverage/**": true,
+    "**/logs/**": true,
+    "**/uploads/**": true
+  },
+  
+  "eslint.workingDirectories": [
+    "backend",
+    "frontend"
+  ],
+  
+  "prettier.configPath": ".prettierrc",
+  "prettier.ignorePath": ".prettierignore",
+  
+  "docker.defaultPlatform": "linux",
+  "docker.commands.compose": "docker-compose",
+  
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "icon": "terminal-powershell",
+      "args": ["-NoLogo"]
+    },
+    "Command Prompt": {
+      "path": "C:\\Windows\\System32\\cmd.exe",
+      "icon": "terminal-cmd"
+    },
+    "Git Bash": {
+      "source": "Git Bash"
+    }
+  },
+  
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.ts": "${capture}.js",
+    "*.js": "${capture}.js.map, ${capture}.min.js, ${capture}.d.ts",
+    "*.jsx": "${capture}.js",
+    "*.tsx": "${capture}.ts",
+    "tsconfig.json": "tsconfig.*.json",
+    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml",
+    "*.component.ts": "${capture}.component.html, ${capture}.component.scss, ${capture}.component.css, ${capture}.component.spec.ts",
+    "docker-compose.yml": "docker-compose.*.yml, docker-compose.*.yaml, Dockerfile*"
+  },
+  
+  "json.schemas": [
+    {
+      "fileMatch": ["package.json"],
+      "url": "https://json.schemastore.org/package.json"
+    },
+    {
+      "fileMatch": ["tsconfig.json", "tsconfig.*.json"],
+      "url": "https://json.schemastore.org/tsconfig.json"
+    }
+  ],
+  
+  "debug.console.fontSize": 14,
+  "debug.console.lineHeight": 1.2,
+  
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#1e1e1e",
+    "editor.background": "#1e1e1e",
+    "sideBar.background": "#252526",
+    "terminal.background": "#1e1e1e"
+  },
+  
+  "workbench.colorTheme": "Dark+ (default dark)",
+  "workbench.iconTheme": "vscode-icons",
+  
+  "extensions.recommendations": [
+    "ms-vscode.vscode-typescript-next",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "ms-vscode.vscode-json",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode-remote.remote-containers",
+    "ms-azuretools.vscode-docker",
+    "prisma.prisma",
+    "humao.rest-client",
+    "streetsidesoftware.code-spell-checker",
+    "github.copilot",
+    "ms-vscode.powershell"
+  ]
+}

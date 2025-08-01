@@ -1,1 +1,0 @@
-Katalog frontend zawiera aplikację SPA (Single Page Application) dla systemu PPM.

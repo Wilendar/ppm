@@ -1,0 +1,217 @@
+// This is your Prisma schema file for PPM (Prestashop Product Manager)
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication and authorization
+model User {
+  id                Int      @id @default(autoincrement())
+  email             String   @unique
+  name              String
+  first_name        String?
+  last_name         String?
+  password_hash     String?
+  avatar            String?
+  role              Role     @default(USER)
+  oauth_provider    OAuthProvider?
+  oauth_id          String?
+  oauth_data        Json?
+  email_verified    Boolean  @default(false)
+  active            Boolean  @default(true)
+  domain            String?
+  last_login        DateTime?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  created_products  Product[] @relation("ProductCreator")
+  user_shops        UserShop[]
+  sync_history      SyncHistory[]
+
+  @@map("users")
+}
+
+// Shop model for PrestaShop connections
+model Shop {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  url                String
+  api_key            String   // Encrypted
+  prestashop_version String
+  active             Boolean  @default(true)
+  last_sync          DateTime?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  // Relations
+  users              UserShop[]
+  products           ProductShopData[]
+  categories         Category[]
+  sync_history       SyncHistory[]
+
+  @@map("shops")
+}
+
+// Junction table for users and shops (many-to-many)
+model UserShop {
+  id      Int @id @default(autoincrement())
+  user_id Int
+  shop_id Int
+
+  // Relations
+  user    User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  shop    Shop @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, shop_id])
+  @@map("user_shops")
+}
+
+// Core product model
+model Product {
+  id          Int      @id @default(autoincrement())
+  sku         String   @unique
+  created_by  Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  creator         User               @relation("ProductCreator", fields: [created_by], references: [id])
+  shop_data       ProductShopData[]
+  images          ProductImage[]
+  categories      ProductCategory[]
+  sync_history    SyncHistory[]
+
+  @@map("products")
+}
+
+// Shop-specific product data
+model ProductShopData {
+  id          Int           @id @default(autoincrement())
+  product_id  Int
+  shop_id     Int
+  name        String
+  description String?       @db.Text
+  price       Decimal       @db.Decimal(10, 2)
+  status      ProductStatus @default(DRAFT)
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+
+  // Relations
+  product     Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  shop        Shop    @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+
+  @@unique([product_id, shop_id])
+  @@map("product_shop_data")
+}
+
+// Category model (shop-specific)
+model Category {
+  id          Int      @id @default(autoincrement())
+  shop_id     Int
+  name        String
+  parent_id   Int?
+  active      Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  shop        Shop              @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  parent      Category?         @relation("CategoryParent", fields: [parent_id], references: [id])
+  children    Category[]        @relation("CategoryParent")
+  products    ProductCategory[]
+
+  @@map("categories")
+}
+
+// Junction table for products and categories (many-to-many)
+model ProductCategory {
+  id          Int @id @default(autoincrement())
+  product_id  Int
+  category_id Int
+
+  // Relations
+  product     Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@unique([product_id, category_id])
+  @@map("product_categories")
+}
+
+// Product images model
+model ProductImage {
+  id          Int      @id @default(autoincrement())
+  product_id  Int
+  filename    String
+  path        String
+  alt_text    String?
+  position    Int      @default(0)
+  is_main     Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  product     Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+// Sync history for tracking operations
+model SyncHistory {
+  id            Int           @id @default(autoincrement())
+  product_id    Int
+  shop_id       Int
+  user_id       Int
+  operation     SyncOperation
+  status        SyncStatus
+  started_at    DateTime      @default(now())
+  completed_at  DateTime?
+  result        Json?
+  error_message String?
+
+  // Relations
+  product       Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  shop          Shop    @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  user          User    @relation(fields: [user_id], references: [id])
+
+  @@map("sync_history")
+}
+
+// Enums
+enum Role {
+  USER
+  MANAGER
+  ADMIN
+}
+
+enum OAuthProvider {
+  google
+  microsoft
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
+enum SyncOperation {
+  CREATE
+  UPDATE
+  DELETE
+  EXPORT
+  IMPORT
+}
+
+enum SyncStatus {
+  STARTED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}

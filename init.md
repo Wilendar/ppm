@@ -1,5 +1,5 @@
 Tworzymy narzędzie do zarządzania produktami na wielu sklepach Prestashop jednocześnie o nazwie Prestashop Product Manager.
-
+* Musisz opierać się na oficjalnej dokumentacji oraz Best Practice dotyczących prestashop 8 i 9 z oficjalnej dokumentacji https://devdocs.prestashop-project.org/8/ https://devdocs.prestashop-project.org/9/ i internetu
 * Aplikacja musi działać online w przeglądarce.
 * Aplikacja musi mieć uwierzytelnianie OAuth Google Workspace na własną domenę oraz Microsoft
 * Aplikacja musi mieć następujące poziomy użytkowników:
@@ -9,6 +9,7 @@ Tworzymy narzędzie do zarządzania produktami na wielu sklepach Prestashop jedn
 * Aplikacja musi weryfikować poprawność produktów przed eksportem na prestashop
 * Aplikacja powinna mieć czytelny i przejrzysty interface zgodny ze współczesnymi trendami, a także oferować tryb ciemny i jasny oraz posiadać elementy interaktywne z nowoczesnymi animacjami.
 * Jako punkt wyjścia do poprawnego dodawania produktów na sklep prestashop możesz się sugerować inną aplikacją "D:\\OneDrive - MPP TRADE\\Skrypty\\Presta\_Sync" do synchronizacji danych między dwoma prestami, tam dodawanie produktów ze starej na nową prestę odbywało się w sposób prawidłowy.
+* Aplikacja musi podczas eksportu zdjęć tworzyć strukturę katalogów do zdjęć zgodnie z zasadami prestashop
 * Aplikacja musi działać szybko i operować na dużej liczbie danych
 * Aplikacja musi Tworzyć własną lokalną bazę zdjęć gotową do eksportu na prestashop, zgodnie z zasadami dodawania zdjęć na prestashop do produktów
 * Aplikacja musi mieć możliwość wybrania sklepu prestashop przez użytkownika na który ma być eksportowany produkt

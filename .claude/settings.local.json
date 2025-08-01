@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(rmdir:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(touch:*)",
+      "Bash(npm install)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 10s npm start)",
+      "Bash(timeout 15s npm run dev)",
+      "Bash(timeout 15s npx ts-node -r tsconfig-paths/register src/app.ts)",
+      "Bash(timeout 10s npx ts-node -r tsconfig-paths/register src/app.ts)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(node:*)",
+      "Bash(PORT=3002 node src/app-simple.js)",
+      "Bash(pkill:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git config:*)",
+      "Bash(rm:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

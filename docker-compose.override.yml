@@ -1,0 +1,49 @@
+# Override for development environment
+# This file is automatically loaded by docker-compose
+# and overrides settings from docker-compose.yml
+
+version: '3.8'
+
+services:
+  # Development-specific backend configuration
+  backend:
+    build:
+      target: development
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+      API_DOCS_ENABLED: "true"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+    ports:
+      - "9229:9229"  # Node.js debugger port
+    stdin_open: true
+    tty: true
+
+  # Development-specific frontend configuration  
+  frontend:
+    build:
+      target: development
+    environment:
+      NODE_ENV: development
+      VITE_APP_ENV: development
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev
+    stdin_open: true
+    tty: true
+
+  # Enable development database tools
+  phpmyadmin:
+    profiles: ["dev", "tools"]
+    
+  pgadmin:
+    profiles: ["dev", "tools"]
+
+  # Development nginx with hot reload support
+  nginx:
+    volumes:
+      - ./nginx/dev.nginx.conf:/etc/nginx/nginx.conf:ro

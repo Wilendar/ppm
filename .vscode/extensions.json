@@ -1,0 +1,34 @@
+{
+  "recommendations": [
+    "ms-vscode.vscode-typescript-next",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "ms-vscode.vscode-json",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode-remote.remote-containers",
+    "ms-azuretools.vscode-docker",
+    "prisma.prisma",
+    "humao.rest-client",
+    "streetsidesoftware.code-spell-checker",
+    "github.copilot",
+    "ms-vscode.powershell",
+    "ms-vscode.vscode-yaml",
+    "redhat.vscode-xml",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "ms-vscode.vscode-json",
+    "vscode-icons-team.vscode-icons",
+    "gruntfuggly.todo-tree",
+    "aaron-bond.better-comments",
+    "usernamehw.errorlens",
+    "ms-vscode.live-server",
+    "rangav.vscode-thunder-client",
+    "ms-vscode-remote.remote-ssh",
+    "ms-vscode-remote.remote-wsl"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.vscode-typescript",
+    "hookyqr.beautify",
+    "ms-vscode.vscode-chrome-debug-core"
+  ]
+}
