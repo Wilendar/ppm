@@ -12,39 +12,26 @@ const prisma = new PrismaClient();
 export interface CreateUserData {
   email: string;
   name: string;
-  first_name?: string;
-  last_name?: string;
-  password?: string;
-  avatar?: string;
-  role: 'admin' | 'manager' | 'user';
-  oauth_provider?: 'google' | 'microsoft';
+  role: 'USER' | 'MANAGER' | 'ADMIN';
+  oauth_provider?: 'GOOGLE' | 'MICROSOFT';
   oauth_id?: string;
-  oauth_data?: any;
-  email_verified?: boolean;
-  active?: boolean;
-  domain?: string;
+  avatar_url?: string;
+  preferences?: any;
 }
 
 export interface UpdateUserData {
   name?: string;
-  first_name?: string;
-  last_name?: string;
-  avatar?: string;
-  role?: 'admin' | 'manager' | 'user';
-  oauth_provider?: 'google' | 'microsoft';
+  role?: 'USER' | 'MANAGER' | 'ADMIN';
+  oauth_provider?: 'GOOGLE' | 'MICROSOFT';
   oauth_id?: string;
-  oauth_data?: any;
-  email_verified?: boolean;
-  active?: boolean;
-  last_login?: Date;
-  domain?: string;
+  avatar_url?: string;
+  preferences?: any;
+  last_login_at?: Date;
 }
 
 export interface UserFilters {
-  role?: 'admin' | 'manager' | 'user';
-  active?: boolean;
-  oauth_provider?: 'google' | 'microsoft';
-  domain?: string;
+  role?: 'USER' | 'MANAGER' | 'ADMIN';
+  oauth_provider?: 'GOOGLE' | 'MICROSOFT';
   search?: string;
 }
 
@@ -56,7 +43,7 @@ export interface User {
   last_name?: string;
   avatar?: string;
   role: 'admin' | 'manager' | 'user';
-  oauth_provider?: 'google' | 'microsoft';
+  oauth_provider?: 'GOOGLE' | 'MICROSOFT';
   oauth_id?: string;
   oauth_data?: any;
   email_verified: boolean;
@@ -79,27 +66,17 @@ export class UserService {
         throw new Error(`User with email ${userData.email} already exists`);
       }
 
-      // Hash password if provided
-      let hashedPassword: string | undefined;
-      if (userData.password) {
-        hashedPassword = await bcrypt.hash(userData.password, 12);
-      }
+      // Password not used in OAuth-only model
 
       const user = await prisma.user.create({
         data: {
           email: userData.email.toLowerCase().trim(),
           name: userData.name.trim(),
-          first_name: userData.first_name?.trim(),
-          last_name: userData.last_name?.trim(),
-          password_hash: hashedPassword,
-          avatar: userData.avatar,
-          role: userData.role,
-          oauth_provider: userData.oauth_provider,
+          role: userData.role as any,
+          oauth_provider: userData.oauth_provider as any,
           oauth_id: userData.oauth_id,
-          oauth_data: userData.oauth_data,
-          email_verified: userData.email_verified || false,
-          active: userData.active !== undefined ? userData.active : true,
-          domain: userData.domain?.toLowerCase(),
+          avatar_url: userData.avatar_url,
+          preferences: userData.preferences || {},
         },
       });
 
@@ -161,7 +138,7 @@ export class UserService {
   /**
    * Get user by OAuth provider and ID
    */
-  async getUserByOAuth(provider: 'google' | 'microsoft', oauthId: string): Promise<User | null> {
+  async getUserByOAuth(provider: 'GOOGLE' | 'MICROSOFT', oauthId: string): Promise<User | null> {
     try {
       const user = await prisma.user.findFirst({
         where: {
@@ -189,12 +166,13 @@ export class UserService {
       const user = await prisma.user.update({
         where: { id },
         data: {
-          ...updateData,
           name: updateData.name?.trim(),
-          first_name: updateData.first_name?.trim(),
-          last_name: updateData.last_name?.trim(),
-          domain: updateData.domain?.toLowerCase(),
-          updated_at: new Date(),
+          role: updateData.role as any,
+          oauth_provider: updateData.oauth_provider as any,
+          oauth_id: updateData.oauth_id,
+          avatar_url: updateData.avatar_url,
+          preferences: updateData.preferences,
+          last_login_at: updateData.last_login_at,
         },
       });
 
@@ -222,7 +200,6 @@ export class UserService {
       await prisma.user.update({
         where: { id },
         data: {
-          active: false,
           updated_at: new Date(),
         },
       });
@@ -261,16 +238,8 @@ export class UserService {
         where.role = filters.role;
       }
 
-      if (filters.active !== undefined) {
-        where.active = filters.active;
-      }
-
       if (filters.oauth_provider) {
         where.oauth_provider = filters.oauth_provider;
-      }
-
-      if (filters.domain) {
-        where.domain = filters.domain.toLowerCase();
       }
 
       if (filters.search) {
@@ -317,17 +286,18 @@ export class UserService {
         where: { email: email.toLowerCase().trim() },
       });
 
-      if (!user || !user.password_hash) {
+      if (!user) {
         return null;
       }
 
-      const isValid = await bcrypt.compare(password, user.password_hash);
+      // Password verification not available in OAuth-only model
+      const isValid = false;
       if (!isValid) {
         return null;
       }
 
       // Update last login
-      await this.updateUser(user.id, { last_login: new Date() });
+      await this.updateUser(user.id, { last_login_at: new Date() });
 
       return this.sanitizeUser(user);
     } catch (error) {
@@ -349,8 +319,7 @@ export class UserService {
       await prisma.user.update({
         where: { id },
         data: {
-          password_hash: hashedPassword,
-          updated_at: new Date(),
+          // Password change not supported in OAuth-only model
         },
       });
 
@@ -375,17 +344,15 @@ export class UserService {
     try {
       const [googleUsers, microsoftUsers] = await Promise.all([
         prisma.user.findMany({
-          where: { oauth_provider: 'google', active: true },
-          select: { domain: true },
+          where: { oauth_provider: 'GOOGLE' },
         }),
         prisma.user.findMany({
-          where: { oauth_provider: 'microsoft', active: true },
-          select: { domain: true },
+          where: { oauth_provider: 'MICROSOFT' },
         }),
       ]);
 
-      const googleDomains = [...new Set(googleUsers.map(u => u.domain).filter(Boolean))];
-      const microsoftTenants = [...new Set(microsoftUsers.map(u => u.domain).filter(Boolean))];
+      const googleDomains: string[] = [];
+      const microsoftTenants: string[] = [];
 
       return {
         google: {
@@ -489,8 +456,7 @@ export class UserService {
    */
   private sanitizeUser(user: any): User {
     if (!user) return user;
-    const { password_hash, ...sanitizedUser } = user;
-    return sanitizedUser as User;
+    return user as User;
   }
 
   /**
@@ -498,16 +464,12 @@ export class UserService {
    */
   async getUserStats(): Promise<{
     total: number;
-    active: number;
-    inactive: number;
     byRole: Record<string, number>;
     byProvider: Record<string, number>;
   }> {
     try {
-      const [total, active, inactive, byRole, byProvider] = await Promise.all([
+      const [total, byRole, byProvider] = await Promise.all([
         prisma.user.count(),
-        prisma.user.count({ where: { active: true } }),
-        prisma.user.count({ where: { active: false } }),
         prisma.user.groupBy({
           by: ['role'],
           _count: { role: true },
@@ -531,8 +493,6 @@ export class UserService {
 
       return {
         total,
-        active,
-        inactive,
         byRole: roleStats,
         byProvider: providerStats,
       };

@@ -79,7 +79,7 @@ export class JWTService {
       issuer: this.issuer,
       audience: this.audience,
       algorithm: 'HS256',
-    });
+    } as jwt.SignOptions);
 
     // Generate refresh token
     const refreshToken = jwt.sign(payload, this.refreshTokenSecret, {
@@ -87,7 +87,7 @@ export class JWTService {
       issuer: this.issuer,
       audience: this.audience,
       algorithm: 'HS256',
-    });
+    } as jwt.SignOptions);
 
     // Store refresh token in Redis
     await this.storeRefreshToken(refreshToken, {

@@ -8,6 +8,7 @@ import passport from 'passport';
 import { OAuthService } from '../services/auth/oauth.service';
 import { JWTService } from '../services/auth/jwt.service';
 import { UserService } from '../services/user/user.service';
+import { User } from '../models/user.model';
 import { logger } from '../utils/logger.util';
 
 export interface AuthenticatedRequest extends Request {
@@ -205,7 +206,7 @@ export class AuthController {
       }
 
       // Get fresh user data
-      const user = await this.userService.getUserById(req.user.id);
+      const user = await this.userService.getUserById((req.user as any).id);
       
       if (!user) {
         res.status(404).json({
@@ -247,7 +248,7 @@ export class AuthController {
     } catch (error) {
       logger.error('Get user info failed:', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        userId: req.user?.id,
+        userId: (req.user as any)?.id,
       });
 
       res.status(500).json({
@@ -273,7 +274,7 @@ export class AuthController {
       this.clearAuthCookies(res);
 
       logger.info('User logged out', {
-        userId: req.user?.id,
+        userId: (req.user as any)?.id,
         ip: req.ip,
       });
 
@@ -284,7 +285,7 @@ export class AuthController {
     } catch (error) {
       logger.error('Logout failed:', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        userId: req.user?.id,
+        userId: (req.user as any)?.id,
       });
 
       // Clear cookies anyway
@@ -311,13 +312,13 @@ export class AuthController {
         return;
       }
 
-      await this.jwtService.revokeAllUserTokens(req.user.id);
+      await this.jwtService.revokeAllUserTokens((req.user as any).id);
 
       // Clear cookies
       this.clearAuthCookies(res);
 
       logger.info('User logged out from all devices', {
-        userId: req.user.id,
+        userId: (req.user as any).id,
         ip: req.ip,
       });
 
@@ -328,7 +329,7 @@ export class AuthController {
     } catch (error) {
       logger.error('Logout all failed:', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        userId: req.user?.id,
+        userId: (req.user as any)?.id,
       });
 
       res.status(500).json({
@@ -353,7 +354,7 @@ export class AuthController {
         return;
       }
 
-      const sessions = await this.jwtService.getUserActiveSessions(req.user.id);
+      const sessions = await this.jwtService.getUserActiveSessions((req.user as any).id);
 
       res.json({
         success: true,
@@ -370,7 +371,7 @@ export class AuthController {
     } catch (error) {
       logger.error('Get active sessions failed:', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        userId: req.user?.id,
+        userId: (req.user as any)?.id,
       });
 
       res.status(500).json({

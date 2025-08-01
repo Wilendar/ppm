@@ -25,7 +25,17 @@
       "Bash(git remote set-url:*)",
       "Bash(git config:*)",
       "Bash(rm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(claude ask context-plan-keeper)",
+      "Bash(claude ask backend-api-developer \"Backend PPM - ocena stanu i priorytetyzacja napraw TypeScript\n\nAKTUALNY STAN BACKENDU:\n✅ POZYTYWNE:\n- Prisma Schema: Kompletnie przepracowany, 100% zgodny z design.md (11 modeli, 10 enumów, 15+ indeksów)\n- OAuth System: Google + Microsoft authentication foundation gotowy\n- Express Infrastructure: Solid foundation z TypeScript + middleware\n- Docker Setup: Kompletna konfiguracja + health checks\n- Migracje: Performance indexes przygotowane\n\n❌ KRYTYCZNE PROBLEMY:\n- TypeScript: 46 błędów kompilacji (głównie user.model.ts vs Prisma types conflicts)\n- Database Services: Nieuruchomione (Docker)\n- Manual interfaces: Konflikt z generated Prisma types\n\n📊 DIAGNOSTIC REPORT WSKAZUJE:\n- Phase 1 (45 min): Fix typu conflicts - user.model.ts vs Prisma\n- Phase 2 (30 min): JWT + Redis configuration fixes  \n- Phase 3 (15 min): Docker environment setup\n- Phase 4 (20 min): Database operations testing\n\nPYTANIA:\n1. Czy 46 błędów TypeScript blokuje przejście do ETAP 2 (CRUD Produktów)?\n2. Którą fazę napraw traktować jako highest priority?\n3. Czy commit obecny stan z Prisma improvements czy czekać na fixes?\n4. Jakie tasks dla coding-style-agent w jakiej kolejności?\n5. Czy infrastruktura jest gotowa na implementację API endpoints?\n\nPotrzebuję professional assessment i action plan dla zespołu.\")",
+      "Bash(claude ask architect \"PPM Architecture Planning - ETAP 2 Implementation\n\nAKTUALNY STAN PROJEKTU:\n✅ ETAP 1 KOMPLETNY:\n- Backend Infrastructure: Express + TypeScript + Prisma + OAuth ready\n- Database Schema: 11 modeli, 10 enumów, production-ready\n- TypeScript Compilation: ZERO błędów\n- Docker Setup: Complete infrastructure\n- Authentication: Google + Microsoft OAuth working\n\n🎯 ETAP 2 TARGET: Zarządzanie produktami (6-8 tygodni)\n- 2.1 CRUD Produktów (Tydzień 1-2) - NASTĘPNY KROK\n- 2.2 Zarządzanie sklepów (Tydzień 2-3)  \n- 2.3 System kategorii (Tydzień 3-4)\n- 2.4 Zarządzanie zdjęć (Tydzień 4-6)\n- 2.5 Rich Text Editor (Tydzień 6-8)\n\nKLUCZOWE PYTANIA ARCHITEKTONICZNE:\n1. Jaka struktura API endpoints dla Product CRUD (RESTful patterns)?\n2. Jak zorganizować Product-Shop-Category relationships w API?\n3. Czy potrzebujemy GraphQL dla complex queries czy REST wystarczy?\n4. Jaka strategia dla image handling i file storage?\n5. Jak zaprojektować preview/validation workflow przed eksportem?\n\nTECHNICZNE DECYZJE:\n- Database: PostgreSQL main + MySQL compatibility\n- API: RESTful + możliwe GraphQL later\n- File Storage: Local storage + S3 compatibility\n- Caching: Redis for sessions + data caching\n- Queue: Bull for background jobs\n\nPotrzebuję architectural blueprint i implementation roadmap dla ETAP 2.1.\")"
     ],
     "deny": []
   }

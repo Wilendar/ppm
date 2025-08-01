@@ -11,58 +11,39 @@ export interface User {
   id: number;
   email: string;
   name: string;
-  first_name?: string;
-  last_name?: string;
-  password_hash?: string;
-  avatar?: string;
-  role: 'admin' | 'manager' | 'user';
-  oauth_provider?: 'google' | 'microsoft';
-  oauth_id?: string;
-  oauth_data?: any;
-  email_verified: boolean;
-  active: boolean;
-  domain?: string;
-  last_login?: Date;
+  role: 'USER' | 'MANAGER' | 'ADMIN';
+  oauth_provider?: 'GOOGLE' | 'MICROSOFT' | null;
+  oauth_id?: string | null;
+  avatar_url?: string | null;
+  preferences: any;
   created_at: Date;
   updated_at: Date;
+  last_login_at?: Date | null;
 }
 
 export interface CreateUserInput {
   email: string;
   name: string;
-  first_name?: string;
-  last_name?: string;
-  password?: string;
-  avatar?: string;
-  role: 'admin' | 'manager' | 'user';
-  oauth_provider?: 'google' | 'microsoft';
+  role: 'USER' | 'MANAGER' | 'ADMIN';
+  oauth_provider?: 'GOOGLE' | 'MICROSOFT';
   oauth_id?: string;
-  oauth_data?: any;
-  email_verified?: boolean;
-  active?: boolean;
-  domain?: string;
+  avatar_url?: string;
+  preferences?: any;
 }
 
 export interface UpdateUserInput {
   name?: string;
-  first_name?: string;
-  last_name?: string;
-  avatar?: string;
-  role?: 'admin' | 'manager' | 'user';
-  oauth_provider?: 'google' | 'microsoft';
+  role?: 'USER' | 'MANAGER' | 'ADMIN';
+  oauth_provider?: 'GOOGLE' | 'MICROSOFT';
   oauth_id?: string;
-  oauth_data?: any;
-  email_verified?: boolean;
-  active?: boolean;
-  domain?: string;
-  last_login?: Date;
+  avatar_url?: string;
+  preferences?: any;
+  last_login_at?: Date;
 }
 
 export interface UserFilters {
-  role?: 'admin' | 'manager' | 'user';
-  active?: boolean;
-  oauth_provider?: 'google' | 'microsoft';
-  domain?: string;
+  role?: 'USER' | 'MANAGER' | 'ADMIN';
+  oauth_provider?: 'GOOGLE' | 'MICROSOFT';
   search?: string;
 }
 
@@ -82,14 +63,14 @@ export interface UserPermission {
 }
 
 export const USER_ROLES = {
-  ADMIN: 'admin' as const,
-  MANAGER: 'manager' as const,
-  USER: 'user' as const,
+  ADMIN: 'ADMIN' as const,
+  MANAGER: 'MANAGER' as const,
+  USER: 'USER' as const,
 };
 
 export const OAUTH_PROVIDERS = {
-  GOOGLE: 'google' as const,
-  MICROSOFT: 'microsoft' as const,
+  GOOGLE: 'GOOGLE' as const,
+  MICROSOFT: 'MICROSOFT' as const,
 };
 
 export const USER_PERMISSIONS = {

@@ -1,61 +1,68 @@
-// This is your Prisma schema file for PPM (Prestashop Product Manager)
-// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+// PPM (PrestaShop Product Manager) Database Schema
+// Based on design.md Section 2.3 - Complete production-ready schema
+// Author: Kamil Wiliński
+// Version: 2.0
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["views", "relationJoins"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Connection pooling configuration (5-20 connections per design.md)
+  directUrl = env("DATABASE_DIRECT_URL")
 }
 
-// User model for authentication and authorization
+// Users and Authentication - Enhanced per design.md
 model User {
-  id                Int      @id @default(autoincrement())
-  email             String   @unique
+  id                Int       @id @default(autoincrement())
+  email             String    @unique
   name              String
-  first_name        String?
-  last_name         String?
-  password_hash     String?
-  avatar            String?
-  role              Role     @default(USER)
+  role              Role      @default(USER)
   oauth_provider    OAuthProvider?
   oauth_id          String?
-  oauth_data        Json?
-  email_verified    Boolean  @default(false)
-  active            Boolean  @default(true)
-  domain            String?
-  last_login        DateTime?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  avatar_url        String?
+  preferences       Json      @default("{}")
+  created_at        DateTime  @default(now()) @db.Timestamptz
+  updated_at        DateTime  @updatedAt @db.Timestamptz
+  last_login_at     DateTime? @db.Timestamptz
 
   // Relations
-  created_products  Product[] @relation("ProductCreator")
+  created_products  Product[]     @relation("ProductCreator")
+  created_shops     Shop[]        @relation("ShopCreator")
   user_shops        UserShop[]
   sync_history      SyncHistory[]
+  jobs              Job[]
 
+  // Validation constraints applied via migration: 002_add_validation_constraints.sql
   @@map("users")
 }
 
-// Shop model for PrestaShop connections
+// PrestaShop Shop Connections - Enhanced per design.md
 model Shop {
-  id                 Int      @id @default(autoincrement())
+  id                 Int        @id @default(autoincrement())
   name               String
   url                String
-  api_key            String   // Encrypted
+  api_key_encrypted  String     // Encrypted API key
   prestashop_version String
-  active             Boolean  @default(true)
-  last_sync          DateTime?
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
+  status             ShopStatus @default(ACTIVE)
+  last_sync_at       DateTime?  @db.Timestamptz
+  created_by         Int
+  settings           Json       @default("{}")
+  created_at         DateTime   @default(now()) @db.Timestamptz
+  updated_at         DateTime   @updatedAt @db.Timestamptz
 
   // Relations
+  creator            User              @relation("ShopCreator", fields: [created_by], references: [id])
   users              UserShop[]
-  products           ProductShopData[]
+  product_data       ProductShopData[]
   categories         Category[]
+  image_data         ImageShopData[]
   sync_history       SyncHistory[]
 
+  // Validation constraints applied via migration: 002_add_validation_constraints.sql
   @@map("shops")
 }
 
@@ -73,117 +80,186 @@ model UserShop {
   @@map("user_shops")
 }
 
-// Core product model
+// Central Product Catalog - Enhanced per design.md
 model Product {
-  id          Int      @id @default(autoincrement())
-  sku         String   @unique
-  created_by  Int
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id               Int           @id @default(autoincrement())
+  sku              String        @unique
+  base_name        String
+  base_description String?       @db.Text
+  status           ProductStatus @default(DRAFT)
+  created_by       Int
+  created_at       DateTime      @default(now()) @db.Timestamptz
+  updated_at       DateTime      @updatedAt @db.Timestamptz
 
   // Relations
-  creator         User               @relation("ProductCreator", fields: [created_by], references: [id])
-  shop_data       ProductShopData[]
-  images          ProductImage[]
-  categories      ProductCategory[]
-  sync_history    SyncHistory[]
+  creator          User              @relation("ProductCreator", fields: [created_by], references: [id])
+  shop_data        ProductShopData[]
+  images           ProductImage[]
+  categories       ProductCategory[]
+  sync_history     SyncHistory[]
 
+  @@index([sku])
+  @@index([status])
+  // Validation constraints applied via migration: 002_add_validation_constraints.sql
   @@map("products")
 }
 
-// Shop-specific product data
+// Shop-Specific Product Data - Enhanced per design.md
 model ProductShopData {
-  id          Int           @id @default(autoincrement())
-  product_id  Int
-  shop_id     Int
-  name        String
-  description String?       @db.Text
-  price       Decimal       @db.Decimal(10, 2)
-  status      ProductStatus @default(DRAFT)
-  created_at  DateTime      @default(now())
-  updated_at  DateTime      @updatedAt
+  id                Int                 @id @default(autoincrement())
+  product_id        Int
+  shop_id           Int
+  name              String
+  description       String?             @db.Text
+  short_description String?             @db.Text
+  price             Decimal             @db.Decimal(10, 2)
+  sale_price        Decimal?            @db.Decimal(10, 2)
+  status            ProductShopStatus   @default(INACTIVE)
+  prestashop_id     Int?
+  last_synced_at    DateTime?           @db.Timestamptz
+  sync_status       SyncStatus          @default(PENDING)
+  metadata          Json                @default("{}")
+  created_at        DateTime            @default(now()) @db.Timestamptz
+  updated_at        DateTime            @updatedAt @db.Timestamptz
 
   // Relations
-  product     Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  shop        Shop    @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  product           Product             @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  shop              Shop                @relation(fields: [shop_id], references: [id], onDelete: Cascade)
 
   @@unique([product_id, shop_id])
+  @@index([product_id, shop_id])
+  @@index([sync_status])
   @@map("product_shop_data")
 }
 
-// Category model (shop-specific)
+// Categories per Shop - Enhanced per design.md
 model Category {
-  id          Int      @id @default(autoincrement())
-  shop_id     Int
-  name        String
-  parent_id   Int?
-  active      Boolean  @default(true)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  shop_id       Int
+  name          String
+  parent_id     Int?
+  prestashop_id Int?
+  level         Int      @default(0)
+  position      Int      @default(0)
+  active        Boolean  @default(true)
+  created_at    DateTime @default(now()) @db.Timestamptz
+  updated_at    DateTime @updatedAt @db.Timestamptz
 
   // Relations
-  shop        Shop              @relation(fields: [shop_id], references: [id], onDelete: Cascade)
-  parent      Category?         @relation("CategoryParent", fields: [parent_id], references: [id])
-  children    Category[]        @relation("CategoryParent")
-  products    ProductCategory[]
+  shop          Shop              @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+  parent        Category?         @relation("CategoryParent", fields: [parent_id], references: [id])
+  children      Category[]        @relation("CategoryParent")
+  products      ProductCategory[]
 
+  @@index([shop_id, parent_id])
   @@map("categories")
 }
 
-// Junction table for products and categories (many-to-many)
+// Product-Category Relationships per Shop - Enhanced per design.md
 model ProductCategory {
-  id          Int @id @default(autoincrement())
   product_id  Int
   category_id Int
+  shop_id     Int
+  is_default  Boolean  @default(false)
+  created_at  DateTime @default(now()) @db.Timestamptz
 
   // Relations
   product     Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
   category    Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
 
-  @@unique([product_id, category_id])
+  @@id([product_id, category_id, shop_id])
   @@map("product_categories")
 }
 
-// Product images model
+// Image Management - Enhanced per design.md
 model ProductImage {
-  id          Int      @id @default(autoincrement())
-  product_id  Int
-  filename    String
-  path        String
-  alt_text    String?
-  position    Int      @default(0)
-  is_main     Boolean  @default(false)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id                Int      @id @default(autoincrement())
+  product_id        Int
+  filename          String
+  original_filename String
+  file_path         String   @db.Text
+  file_size         Int
+  mime_type         String
+  width             Int
+  height            Int
+  alt_text          String?
+  position          Int      @default(0)
+  is_main           Boolean  @default(false)
+  created_at        DateTime @default(now()) @db.Timestamptz
 
   // Relations
-  product     Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product           Product           @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  shop_data         ImageShopData[]
 
-  @@map("product_images")
+  @@index([product_id, position])
+  @@map("images")
 }
 
-// Sync history for tracking operations
+// Synchronization History - Enhanced per design.md
 model SyncHistory {
-  id            Int           @id @default(autoincrement())
-  product_id    Int
+  id            Int         @id @default(autoincrement())
   shop_id       Int
-  user_id       Int
-  operation     SyncOperation
-  status        SyncStatus
-  started_at    DateTime      @default(now())
-  completed_at  DateTime?
-  result        Json?
-  error_message String?
+  product_id    Int?
+  action        SyncAction
+  status        SyncResult
+  error_message String?     @db.Text
+  data_snapshot Json?
+  performed_by  Int
+  performed_at  DateTime    @default(now()) @db.Timestamptz
 
   // Relations
-  product       Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  shop          Shop    @relation(fields: [shop_id], references: [id], onDelete: Cascade)
-  user          User    @relation(fields: [user_id], references: [id])
+  shop          Shop        @relation(fields: [shop_id], references: [id])
+  product       Product?    @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [performed_by], references: [id])
 
+  @@index([shop_id, product_id])
+  @@index([performed_at(sort: Desc)])
   @@map("sync_history")
 }
 
-// Enums
+// Shop-Specific Image Data - NEW per design.md
+model ImageShopData {
+  id            Int        @id @default(autoincrement())
+  image_id      Int
+  shop_id       Int
+  alt_text      String?
+  position      Int        @default(0)
+  prestashop_id Int?
+  sync_status   SyncStatus @default(PENDING)
+  created_at    DateTime   @default(now()) @db.Timestamptz
+  updated_at    DateTime   @updatedAt @db.Timestamptz
+
+  // Relations
+  image         ProductImage @relation(fields: [image_id], references: [id], onDelete: Cascade)
+  shop          Shop         @relation(fields: [shop_id], references: [id], onDelete: Cascade)
+
+  @@unique([image_id, shop_id])
+  @@map("image_shop_data")
+}
+
+// Import/Export Jobs - NEW per design.md
+model Job {
+  id               Int       @id @default(autoincrement())
+  type             JobType
+  status           JobStatus @default(PENDING)
+  progress         Int       @default(0)
+  total_items      Int       @default(0)
+  processed_items  Int       @default(0)
+  error_count      Int       @default(0)
+  config           Json
+  results          Json?
+  started_by       Int
+  started_at       DateTime? @db.Timestamptz
+  completed_at     DateTime? @db.Timestamptz
+  created_at       DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  user             User      @relation(fields: [started_by], references: [id])
+
+  @@map("jobs")
+}
+
+// Enums - Enhanced per design.md
 enum Role {
   USER
   MANAGER
@@ -191,27 +267,79 @@ enum Role {
 }
 
 enum OAuthProvider {
-  google
-  microsoft
+  GOOGLE
+  MICROSOFT
+}
+
+enum ShopStatus {
+  INACTIVE
+  ACTIVE
+  ERROR
 }
 
 enum ProductStatus {
   DRAFT
   ACTIVE
-  INACTIVE
+  ARCHIVED
 }
 
-enum SyncOperation {
-  CREATE
-  UPDATE
-  DELETE
-  EXPORT
-  IMPORT
+enum ProductShopStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  ARCHIVED
 }
 
 enum SyncStatus {
-  STARTED
+  PENDING
   IN_PROGRESS
   COMPLETED
   FAILED
 }
+
+enum SyncAction {
+  CREATE
+  UPDATE
+  DELETE
+  SYNC
+}
+
+enum SyncResult {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum JobType {
+  IMPORT
+  EXPORT
+  SYNC
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// Database Indexes - Performance-critical indexes per design.md Section 2.3.2
+// Applied via migration file: 001_add_critical_indexes.sql
+//
+// CRITICAL INDEXES IMPLEMENTED:
+// User table: email, oauth_provider, role, created_at
+// Shop table: status, created_by, last_sync_at, prestashop_version  
+// Product table: sku, status, created_by, created_at (sku+status already in @@index)
+// ProductShopData table: product_shop, sync_status, prestashop_id, last_synced_at, status
+// Category table: shop_parent, prestashop_id, active  
+// ProductCategory table: product_id, category_id, shop_id, is_default
+// ProductImage table: product_position, is_main, product_main
+// SyncHistory table: shop_product, performed_at, status, action, performed_by
+// ImageShopData table: sync_status, prestashop_id
+// Job table: status, type, started_by, created_at, started_at, status_type
+// UserShop table: user_id, shop_id
+// 
+// COMPOSITE INDEXES FOR COMMON QUERIES:
+// products(status, created_at), product_shop_data(shop_id, status),
+// product_shop_data(sync_status, shop_id), sync_history(shop_id, status, performed_at)

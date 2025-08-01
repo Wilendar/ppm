@@ -15,9 +15,9 @@ export const validationMiddleware = (req: Request, res: Response, next: NextFunc
   
   if (!errors.isEmpty()) {
     const errorDetails = errors.array().map(error => ({
-      field: error.param,
+      field: (error as any).param || (error as any).path,
       message: error.msg,
-      value: error.value,
+      value: (error as any).value,
     }));
 
     logger.warn('Validation failed', {
@@ -51,13 +51,14 @@ export const createValidationMiddleware = (customHandler?: (errors: any[]) => an
       
       if (customHandler) {
         const customResponse = customHandler(errorArray);
-        return res.status(400).json(customResponse);
+        res.status(400).json(customResponse);
+        return;
       }
 
       const errorDetails = errorArray.map(error => ({
-        field: error.param,
+        field: (error as any).param || (error as any).path,
         message: error.msg,
-        value: error.value,
+        value: (error as any).value,
       }));
 
       logger.warn('Validation failed', {

@@ -5,7 +5,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { JWTService, TokenPayload } from '../services/auth/jwt.service';
-import { UserService, User } from '../services/user/user.service';
+import { UserService } from '../services/user/user.service';
+import { User } from '../models/user.model';
 import { logger } from '../utils/logger.util';
 
 // Extend Express Request interface to include user
@@ -129,10 +130,10 @@ export class AuthMiddleware {
         return;
       }
 
-      if (!allowedRoles.includes(req.user.role)) {
+      if (!allowedRoles.includes((req.user as any).role)) {
         logger.warn('Authorization failed - insufficient role', {
-          userId: req.user.id,
-          userRole: req.user.role,
+          userId: (req.user as any).id,
+          userRole: (req.user as any).role,
           requiredRoles: allowedRoles,
           path: req.path,
         });
@@ -143,7 +144,7 @@ export class AuthMiddleware {
           code: 'INSUFFICIENT_PERMISSIONS',
           details: {
             required: allowedRoles,
-            current: req.user.role,
+            current: (req.user as any).role,
           },
         });
         return;
@@ -167,7 +168,7 @@ export class AuthMiddleware {
         return;
       }
 
-      const userPermissions = this.userService.getUserPermissions(req.user.role);
+      const userPermissions = this.userService.getUserPermissions((req.user as any).role);
       const hasAllPermissions = requiredPermissions.every(permission => 
         userPermissions.includes(permission)
       );
@@ -178,8 +179,8 @@ export class AuthMiddleware {
         );
 
         logger.warn('Authorization failed - missing permissions', {
-          userId: req.user.id,
-          userRole: req.user.role,
+          userId: (req.user as any).id,
+          userRole: (req.user as any).role,
           requiredPermissions,
           missingPermissions,
           path: req.path,
@@ -231,13 +232,13 @@ export class AuthMiddleware {
       }
 
       const resourceUserId = getUserIdFromParams(req);
-      const isOwner = req.user.id === resourceUserId;
-      const isElevated = ['admin', 'manager'].includes(req.user.role);
+      const isOwner = (req.user as any).id === resourceUserId;
+      const isElevated = ['admin', 'manager'].includes((req.user as any).role);
 
       if (!isOwner && !isElevated) {
         logger.warn('Authorization failed - not owner and not elevated', {
-          userId: req.user.id,
-          userRole: req.user.role,
+          userId: (req.user as any).id,
+          userRole: (req.user as any).role,
           resourceUserId,
           path: req.path,
         });
@@ -350,7 +351,7 @@ export class AuthMiddleware {
 
     try {
       // Check if user has active sessions
-      const activeSessions = await this.jwtService.getUserActiveSessions(req.user.id);
+      const activeSessions = await this.jwtService.getUserActiveSessions((req.user as any).id);
       
       if (activeSessions.length === 0) {
         res.status(401).json({
@@ -365,7 +366,7 @@ export class AuthMiddleware {
     } catch (error) {
       logger.error('Session validation failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        userId: req.user.id,
+        userId: (req.user as any).id,
       });
       next();
     }

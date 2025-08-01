@@ -7,6 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 import { createHash, randomBytes } from 'crypto';
 import rateLimit from 'express-rate-limit';
 import { RedisService } from '../services/cache/redis.service';
+import { User } from '../models/user.model';
 import { logger } from '../utils/logger.util';
 
 export class SecurityMiddleware {
@@ -223,7 +224,7 @@ export class SecurityMiddleware {
       ...options,
       keyGenerator: (req: Request) => {
         // Use user ID if authenticated, otherwise fall back to IP
-        return req.user ? `user:${req.user.id}` : req.ip;
+        return req.user ? `user:${(req.user as any).id}` : req.ip;
       },
     });
   };

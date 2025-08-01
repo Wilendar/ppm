@@ -245,16 +245,11 @@ export class OAuthService {
         user = await this.userService.createUser({
           email: profile.email,
           name: profile.name,
-          first_name: profile.firstName,
-          last_name: profile.lastName,
-          avatar: profile.avatar,
-          role,
-          oauth_provider: profile.provider,
+          avatar_url: profile.avatar,
+          role: role.toUpperCase() as any,
+          oauth_provider: profile.provider.toUpperCase() as any,
           oauth_id: profile.id,
-          oauth_data: profile.providerData,
-          email_verified: profile.domainInfo?.isVerified || true,
-          active: true,
-          domain: profile.domainInfo?.domain,
+          preferences: profile.providerData || {},
         });
 
         isNewUser = true;
@@ -269,11 +264,11 @@ export class OAuthService {
       } else {
         // Update existing user's OAuth data
         await this.userService.updateUser(user.id, {
-          oauth_provider: profile.provider,
+          oauth_provider: profile.provider.toUpperCase() as any,
           oauth_id: profile.id,
-          oauth_data: profile.providerData,
-          last_login: new Date(),
-          avatar: profile.avatar || user.avatar,
+          preferences: profile.providerData || {},
+          last_login_at: new Date(),
+          avatar_url: profile.avatar || (user as any).avatar_url,
         });
 
         logger.info('Existing user authenticated via OAuth', {
