@@ -189,6 +189,8 @@ export interface ShopAssignment {
   shortName: string; // max 8 chars
   isActive: boolean;
   lastSync?: Date;
+  syncStatus?: 'synced' | 'differences' | 'error' | 'syncing' | 'inactive';
+  differences?: string[];
 }
 
 export interface CategoryPath {

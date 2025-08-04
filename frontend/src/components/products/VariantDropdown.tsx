@@ -18,7 +18,7 @@ import ShopBadges from './ShopBadges';
 interface VariantDropdownProps {
   variants: ProductVariant[];
   productName: string;
-  onToggleExpand?: (expanded: boolean) => void;
+  onToggleExpand?: () => void;
   isExpanded?: boolean;
 }
 
@@ -186,9 +186,9 @@ const VariantDropdown: React.FC<VariantDropdownProps> = ({
 
   const handleToggle = () => {
     if (onToggleExpand) {
-      onToggleExpand(!expanded);
+      onToggleExpand();
     } else {
-      setLocalExpanded(!expanded);
+      setLocalExpanded(!localExpanded);
     }
   };
 
@@ -227,6 +227,13 @@ const VariantDropdown: React.FC<VariantDropdownProps> = ({
           width: 24,
           height: 24,
           color: 'primary.main',
+          '&:focus': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+          '&:focus-visible': {
+            outline: 'none',
+          }
         }}
       >
         {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}

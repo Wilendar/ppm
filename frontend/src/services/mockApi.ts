@@ -70,42 +70,50 @@ const mockEnhancedProducts: EnhancedProduct[] = [
         shopName: 'EU Electronics Store',
         shortName: 'EU-ELEC',
         isActive: true,
-        lastSync: new Date('2025-01-20T14:30:00Z')
+        lastSync: new Date('2025-01-20T14:30:00Z'),
+        syncStatus: 'synced'
       },
       {
         shopId: '2',
         shopName: 'US Premium Audio',
         shortName: 'US-AUDIO',
         isActive: true,
-        lastSync: new Date('2025-01-20T14:25:00Z')
+        lastSync: new Date('2025-01-20T14:25:00Z'),
+        syncStatus: 'differences',
+        differences: ['Price mismatch']
       },
       {
         shopId: '3',
         shopName: 'UK Tech Hub',
         shortName: 'UK-TECH',
         isActive: true,
-        lastSync: new Date('2025-01-20T14:20:00Z')
+        lastSync: new Date('2025-01-20T14:20:00Z'),
+        syncStatus: 'synced'
       },
       {
         shopId: '7',
         shopName: 'DE Audio Shop',
         shortName: 'DE-AUDIO',
         isActive: true,
-        lastSync: new Date('2025-01-20T14:15:00Z')
+        lastSync: new Date('2025-01-19T10:00:00Z'),
+        syncStatus: 'error',
+        differences: ['Connection timeout']
       },
       {
         shopId: '8',
         shopName: 'FR Electronics',
         shortName: 'FR-ELEC',
         isActive: true,
-        lastSync: new Date('2025-01-20T14:10:00Z')
+        lastSync: new Date('2025-01-20T14:10:00Z'),
+        syncStatus: 'syncing'
       },
       {
         shopId: '9',
         shopName: 'IT Premium Store',
         shortName: 'IT-PREM',
         isActive: false,
-        lastSync: new Date('2025-01-19T10:00:00Z')
+        lastSync: new Date('2025-01-19T10:00:00Z'),
+        syncStatus: 'inactive'
       }
     ],
     categories: [
@@ -207,28 +215,34 @@ const mockEnhancedProducts: EnhancedProduct[] = [
         shopName: 'EU Electronics Store',
         shortName: 'EU-ELEC',
         isActive: true,
-        lastSync: new Date('2025-01-25T16:45:00Z')
+        lastSync: new Date('2025-01-25T16:45:00Z'),
+        syncStatus: 'differences',
+        differences: ['Stock level mismatch']
       },
       {
         shopId: '4',
         shopName: 'Fitness World',
         shortName: 'FITNESS',
         isActive: true,
-        lastSync: new Date('2025-01-25T16:40:00Z')
+        lastSync: new Date('2025-01-25T16:40:00Z'),
+        syncStatus: 'synced'
       },
       {
         shopId: '10',
         shopName: 'Sport & Health',
         shortName: 'SPORT-HP',
         isActive: true,
-        lastSync: new Date('2025-01-25T16:35:00Z')
+        lastSync: new Date('2025-01-25T16:35:00Z'),
+        syncStatus: 'synced'
       },
       {
         shopId: '11',
         shopName: 'Wellness Store',
         shortName: 'WELLNESS',
         isActive: true,
-        lastSync: new Date('2025-01-25T16:30:00Z')
+        lastSync: new Date('2025-01-25T16:30:00Z'),
+        syncStatus: 'error',
+        differences: ['API connection failed']
       }
     ],
     categories: [
@@ -377,7 +391,8 @@ const mockEnhancedProducts: EnhancedProduct[] = [
         shopName: 'Photo Professional',
         shortName: 'PHOTO-PR',
         isActive: false,
-        lastSync: new Date('2025-01-20T12:00:00Z')
+        lastSync: new Date('2025-01-20T12:00:00Z'),
+        syncStatus: 'inactive'
       }
     ],
     categories: [
@@ -444,7 +459,8 @@ const mockEnhancedProducts: EnhancedProduct[] = [
         shopName: 'Vintage Accessories',
         shortName: 'VINTAGE',
         isActive: false,
-        lastSync: new Date('2025-01-15T10:00:00Z')
+        lastSync: new Date('2025-01-15T10:00:00Z'),
+        syncStatus: 'inactive'
       }
     ],
     categories: [

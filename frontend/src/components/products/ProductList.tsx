@@ -24,6 +24,7 @@ import {
   GridActionsCellItem,
   GridRowParams,
   GridPaginationModel,
+  GridColumnResizeParams,
 } from '@mui/x-data-grid';
 import {
   Search as SearchIcon,
@@ -73,6 +74,30 @@ const ProductList: React.FC<ProductListProps> = ({
 
   // State for expanded variants
   const [expandedProducts, setExpandedProducts] = useState<Set<number>>(new Set());
+  
+  // Column state persistence
+  const COLUMN_STATE_KEY = 'ppm_product_list_columns';
+  
+  const saveColumnState = (columnState: GridColDef[]) => {
+    const widths = columnState.reduce((acc, col) => {
+      acc[col.field] = col.width;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    localStorage.setItem(COLUMN_STATE_KEY, JSON.stringify(widths));
+  };
+  
+  const restoreColumnState = (defaultColumns: GridColDef[]) => {
+    try {
+      const savedWidths = JSON.parse(localStorage.getItem(COLUMN_STATE_KEY) || '{}');
+      return defaultColumns.map(col => ({
+        ...col,
+        width: savedWidths[col.field] || col.width
+      }));
+    } catch {
+      return defaultColumns;
+    }
+  };
 
   // API hooks
   const { data, isLoading, error, refetch } = useProducts(filters);
@@ -137,7 +162,7 @@ const ProductList: React.FC<ProductListProps> = ({
   };
 
   // Enhanced DataGrid columns configuration with responsive behavior
-  const columns: GridColDef[] = useMemo(() => [
+  const defaultColumns: GridColDef[] = useMemo(() => [
     {
       field: 'thumbnail',
       headerName: '',
@@ -257,14 +282,16 @@ const ProductList: React.FC<ProductListProps> = ({
             variants={params.row.variants || []}
             productName={params.row.name}
             isExpanded={expandedProducts.has(params.row.id)}
-            onToggleExpand={(expanded) => {
-              const newExpanded = new Set(expandedProducts);
-              if (expanded) {
-                newExpanded.add(params.row.id);
-              } else {
-                newExpanded.delete(params.row.id);
-              }
-              setExpandedProducts(newExpanded);
+            onToggleExpand={() => {
+              setExpandedProducts(prev => {
+                const newSet = new Set(prev);
+                if (newSet.has(params.row.id)) {
+                  newSet.delete(params.row.id);
+                } else {
+                  newSet.add(params.row.id);
+                }
+                return newSet;
+              });
             }}
           />
         );
@@ -273,7 +300,8 @@ const ProductList: React.FC<ProductListProps> = ({
     {
       field: 'categories',
       headerName: 'Categories',
-      width: 200,
+      width: 220,
+      minWidth: 200,
       sortable: false,
       hideable: true,
       renderCell: (params) => {
@@ -283,9 +311,10 @@ const ProductList: React.FC<ProductListProps> = ({
         return (
           <CategoryBreadcrumb
             categories={params.row.categories || []}
-            maxWidth={180}
+            maxWidth={210}
             showAsChip={true}
             size="small"
+            allowWrap={true}
           />
         );
       },
@@ -293,9 +322,12 @@ const ProductList: React.FC<ProductListProps> = ({
     {
       field: 'shops',
       headerName: 'Shops',
-      width: 220,
-      minWidth: 200,
+      width: 380,
+      minWidth: 350,
+      maxWidth: 500,
       sortable: false,
+      flex: 0,
+      resizable: true,
       renderCell: (params) => {
         if (params.row.isVariantRow) {
           // Show shops where this variant is available
@@ -305,8 +337,9 @@ const ProductList: React.FC<ProductListProps> = ({
             <ShopBadges
               shops={activeShops}
               showAllLabels={true}
-              maxLabelsPerLine={3}
+              maxLabelsPerLine={4}
               size="small"
+              maxWidth={370}
             />
           );
         }
@@ -314,20 +347,23 @@ const ProductList: React.FC<ProductListProps> = ({
           <ShopBadges
             shops={params.row.shops || []}
             showAllLabels={true}
-            maxLabelsPerLine={3}
+            maxLabelsPerLine={4}
             size="small"
+            maxWidth={370}
           />
         );
       },
     },
     {
       field: 'priceRange',
-      headerName: 'Price Range',
-      width: 120,
+      headerName: 'Prices',
+      width: 140,
       align: 'right',
       headerAlign: 'right',
       renderCell: (params) => {
-        if (params.row.isVariantRow) {
+        const PriceCell = () => {
+          const [showAllPrices, setShowAllPrices] = useState(false);
+          
           const formatPrice = (price: number) => 
             new Intl.NumberFormat('pl-PL', {
               style: 'currency',
@@ -335,60 +371,117 @@ const ProductList: React.FC<ProductListProps> = ({
               minimumFractionDigits: 0,
             }).format(price);
           
-          const getStockColor = (stock: number) => {
-            if (stock === 0) return 'error';
-            if (stock < 10) return 'warning';
-            return 'success';
-          };
+          if (params.row.isVariantRow) {
+            const getStockColor = (stock: number) => {
+              if (stock === 0) return 'error';
+              if (stock < 10) return 'warning';
+              return 'success';
+            };
+            
+            const variant = params.row.variant;
+            const regularPrice = variant?.price || 0;
+            const wholesalePrice = regularPrice * 0.85; // 15% discount
+            const promoPrice = regularPrice * 0.75; // 25% discount
+            
+            return (
+              <Box textAlign="right">
+                <Typography variant="body2" fontWeight="medium" sx={{ fontSize: '0.8rem' }}>
+                  {formatPrice(regularPrice)}
+                </Typography>
+                {showAllPrices && (
+                  <>
+                    <Typography variant="caption" color="primary.main" sx={{ fontSize: '0.7rem', display: 'block' }}>
+                      W: {formatPrice(wholesalePrice)}
+                    </Typography>
+                    <Typography variant="caption" color="error.main" sx={{ fontSize: '0.7rem', display: 'block' }}>
+                      P: {formatPrice(promoPrice)}
+                    </Typography>
+                  </>
+                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5, mt: 0.5 }}>
+                  <Chip
+                    label={`Stock: ${variant?.stock || 0}`}
+                    size="small"
+                    color={getStockColor(variant?.stock || 0)}
+                    variant="filled"
+                    sx={{ fontSize: '0.65em', height: 16 }}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={() => setShowAllPrices(!showAllPrices)}
+                    sx={{
+                      width: 18,
+                      height: 18,
+                      fontSize: '0.7rem',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      '&:focus': {
+                        outline: 'none',
+                        boxShadow: 'none'
+                      }
+                    }}
+                  >
+                    {showAllPrices ? '−' : '+'}
+                  </IconButton>
+                </Box>
+              </Box>
+            );
+          }
+          
+          const variants = params.row.variants || [];
+          if (variants.length === 0) return '-';
+          
+          // Calculate price ranges for all price types
+          const regularPrices = variants.map((v: {price: number}) => v.price);
+          const wholesalePrices = regularPrices.map(p => p * 0.85);
+          const promoPrices = regularPrices.map(p => p * 0.75);
+          
+          const minRegular = Math.min(...regularPrices);
+          const maxRegular = Math.max(...regularPrices);
+          const minWholesale = Math.min(...wholesalePrices);
+          const maxWholesale = Math.max(...wholesalePrices);
+          const minPromo = Math.min(...promoPrices);
+          const maxPromo = Math.max(...promoPrices);
           
           return (
             <Box textAlign="right">
-              <Typography variant="body2" fontWeight="medium">
-                {formatPrice(params.row.variant?.price || 0)}
+              <Typography variant="body2" fontWeight="medium" sx={{ fontSize: '0.8rem' }}>
+                {minRegular === maxRegular ? formatPrice(minRegular) : `${formatPrice(minRegular)} - ${formatPrice(maxRegular)}`}
               </Typography>
-              <Chip
-                label={`Stock: ${params.row.variant?.stock || 0}`}
-                size="small"
-                color={getStockColor(params.row.variant?.stock || 0)}
-                variant="filled"
-                sx={{ mt: 0.5, fontSize: '0.65em', height: 20 }}
-              />
+              {showAllPrices && (
+                <>
+                  <Typography variant="caption" color="primary.main" sx={{ fontSize: '0.7rem', display: 'block' }}>
+                    W: {minWholesale === maxWholesale ? formatPrice(minWholesale) : `${formatPrice(minWholesale)} - ${formatPrice(maxWholesale)}`}
+                  </Typography>
+                  <Typography variant="caption" color="error.main" sx={{ fontSize: '0.7rem', display: 'block' }}>
+                    P: {minPromo === maxPromo ? formatPrice(minPromo) : `${formatPrice(minPromo)} - ${formatPrice(maxPromo)}`}
+                  </Typography>
+                </>
+              )}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mt: 0.5 }}>
+                <IconButton
+                  size="small"
+                  onClick={() => setShowAllPrices(!showAllPrices)}
+                  sx={{
+                    width: 20,
+                    height: 20,
+                    fontSize: '0.7rem',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    '&:focus': {
+                      outline: 'none',
+                      boxShadow: 'none'
+                    }
+                  }}
+                >
+                  {showAllPrices ? '−' : '+'}
+                </IconButton>
+              </Box>
             </Box>
           );
-        }
+        };
         
-        const variants = params.row.variants || [];
-        if (variants.length === 0) return '-';
-        
-        const prices = variants.map((v: {price: number}) => v.price);
-        const minPrice = Math.min(...prices);
-        const maxPrice = Math.max(...prices);
-        
-        const formatPrice = (price: number) => 
-          new Intl.NumberFormat('pl-PL', {
-            style: 'currency',
-            currency: 'PLN',
-            minimumFractionDigits: 0,
-          }).format(price);
-        
-        if (minPrice === maxPrice) {
-          return (
-            <Typography variant="body2" fontWeight="medium">
-              {formatPrice(minPrice)}
-            </Typography>
-          );
-        }
-        
-        return (
-          <Box textAlign="right">
-            <Typography variant="body2" fontWeight="medium">
-              {formatPrice(minPrice)} -
-            </Typography>
-            <Typography variant="body2" fontWeight="medium">
-              {formatPrice(maxPrice)}
-            </Typography>
-          </Box>
-        );
+        return <PriceCell />;
       },
     },
     {
@@ -465,6 +558,25 @@ const ProductList: React.FC<ProductListProps> = ({
       },
     },
   ], [onViewProduct, onEditProduct, deleteProduct.isPending]);
+  
+  // State for columns with persistence
+  const [columns, setColumns] = useState(() => restoreColumnState(defaultColumns));
+  
+  // Update columns when defaultColumns change
+  useMemo(() => {
+    setColumns(restoreColumnState(defaultColumns));
+  }, [defaultColumns]);
+  
+  // Handle column resize
+  const handleColumnResize = (params: GridColumnResizeParams) => {
+    const updatedColumns = columns.map(col => 
+      col.field === params.colDef.field 
+        ? { ...col, width: params.width }
+        : col
+    );
+    setColumns(updatedColumns);
+    saveColumnState(updatedColumns);
+  };
 
   // Prepare data for DataGrid with expanded variants  
   const rows = useMemo(() => {
@@ -617,6 +729,7 @@ const ProductList: React.FC<ProductListProps> = ({
             loading={isLoading}
             paginationModel={paginationModel}
             onPaginationModelChange={handlePaginationChange}
+            onColumnResize={handleColumnResize}
             paginationMode="server"
             rowCount={totalRows}
             pageSizeOptions={[10, 25, 50, 100]}
@@ -632,9 +745,7 @@ const ProductList: React.FC<ProductListProps> = ({
                 },
               },
             }}
-            getRowHeight={(params) => {
-              return params.model.isVariantRow ? 60 : 80;
-            }}
+            getRowHeight={() => 'auto'}
             isRowSelectable={(params) => !params.row.isVariantRow}
             getRowClassName={(params) => {
               return params.row.isVariantRow ? 'variant-row' : 'product-row';

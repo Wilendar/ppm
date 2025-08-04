@@ -20,6 +20,7 @@ interface CategoryBreadcrumbProps {
   onCategoryClick?: (categoryId: string, categoryName: string) => void;
   showAsChip?: boolean;
   size?: 'small' | 'medium';
+  allowWrap?: boolean;
 }
 
 const CategoryBreadcrumb: React.FC<CategoryBreadcrumbProps> = ({
@@ -28,6 +29,7 @@ const CategoryBreadcrumb: React.FC<CategoryBreadcrumbProps> = ({
   onCategoryClick,
   showAsChip = false,
   size = 'small',
+  allowWrap = false,
 }) => {
   if (!categories || categories.length === 0) {
     return (
@@ -55,27 +57,18 @@ const CategoryBreadcrumb: React.FC<CategoryBreadcrumbProps> = ({
 
   const truncateBreadcrumbFromStart = (breadcrumb: string, maxWidth: number) => {
     const parts = breadcrumb.split(' > ');
-    if (parts.length <= 2) return breadcrumb;
     
-    // Always show last 2 parts
-    const lastTwoParts = parts.slice(-2).join(' > ');
-    
-    // Estimate if we need truncation (rough calculation)
-    const estimatedCharWidth = 8; // approximate pixels per character
-    const ellipsisWidth = 24; // width of "... > "
-    const availableChars = Math.floor((maxWidth - ellipsisWidth) / estimatedCharWidth);
-    
-    if (lastTwoParts.length <= availableChars) {
-      // Try to fit more parts from the end
-      for (let i = parts.length - 3; i >= 0; i--) {
-        const candidatePath = parts.slice(i).join(' > ');
-        if (candidatePath.length <= availableChars) {
-          return candidatePath;
-        }
-      }
+    // If 2 or fewer parts, show everything
+    if (parts.length <= 2) {
+      return breadcrumb;
     }
     
-    return `... > ${lastTwoParts}`;
+    // ALWAYS show last 2 categories in full
+    const lastTwo = parts.slice(-2);
+    const lastTwoPath = lastTwo.join(' > ');
+    
+    // For more than 2 parts, add ellipsis prefix
+    return `... > ${lastTwoPath}`;
   };
 
   // const truncateText = (text: string, maxLength: number) => {
@@ -85,7 +78,13 @@ const CategoryBreadcrumb: React.FC<CategoryBreadcrumbProps> = ({
 
   if (showAsChip) {
     return (
-      <Box>
+      <Box sx={{
+        maxWidth: maxWidth,
+        wordWrap: allowWrap ? 'break-word' : 'normal',
+        whiteSpace: allowWrap ? 'normal' : 'nowrap',
+        lineHeight: 1.3,
+        padding: '4px 0'
+      }}>
         <Tooltip
           title={
             <Box>
@@ -100,25 +99,42 @@ const CategoryBreadcrumb: React.FC<CategoryBreadcrumbProps> = ({
           }
           arrow
         >
-          <Chip
-            label={truncateBreadcrumbFromStart(primaryCategory.breadcrumb, maxWidth - 40)}
-            size={size}
-            color="info"
-            variant="outlined"
-            icon={<CategoryIcon />}
-            onClick={onCategoryClick ? () => handleCategoryClick(primaryCategory.path[0]) : undefined}
-            sx={{
-              cursor: onCategoryClick ? 'pointer' : 'default',
-              maxWidth: maxWidth,
-              '& .MuiChip-label': {
-                textOverflow: 'ellipsis',
-                overflow: 'hidden',
-              },
-            }}
-          />
+          {allowWrap ? (
+            <Typography
+              variant="body2"
+              sx={{
+                fontSize: size === 'small' ? '0.75rem' : '0.875rem',
+                wordWrap: 'break-word',
+                whiteSpace: 'normal',
+                lineHeight: 1.2,
+                color: 'text.primary',
+                cursor: onCategoryClick ? 'pointer' : 'default',
+              }}
+              onClick={onCategoryClick ? () => handleCategoryClick(primaryCategory.path[0]) : undefined}
+            >
+              {primaryCategory.breadcrumb}
+            </Typography>
+          ) : (
+            <Chip
+              label={truncateBreadcrumbFromStart(primaryCategory.breadcrumb, maxWidth - 40)}
+              size={size}
+              color="info"
+              variant="outlined"
+              icon={<CategoryIcon />}
+              onClick={onCategoryClick ? () => handleCategoryClick(primaryCategory.path[0]) : undefined}
+              sx={{
+                cursor: onCategoryClick ? 'pointer' : 'default',
+                maxWidth: maxWidth,
+                '& .MuiChip-label': {
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden',
+                },
+              }}
+            />
+          )}
         </Tooltip>
         
-        {hasMultipleCategories && (
+        {hasMultipleCategories && !allowWrap && (
           <Chip
             label={`+${categories.length - 1}`}
             size={size}
@@ -131,18 +147,28 @@ const CategoryBreadcrumb: React.FC<CategoryBreadcrumbProps> = ({
             }}
           />
         )}
+        
+        {hasMultipleCategories && allowWrap && (
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block', mt: 0.5 }}>
+            +{categories.length - 1} more categories
+          </Typography>
+        )}
       </Box>
     );
   }
 
   return (
-    <Box sx={{ maxWidth }}>
+    <Box sx={{ 
+      maxWidth,
+      wordWrap: allowWrap ? 'break-word' : 'normal',
+      whiteSpace: allowWrap ? 'normal' : 'nowrap'
+    }}>
       <Breadcrumbs
         separator={<NavigateNextIcon fontSize="small" />}
         aria-label="category breadcrumb"
         sx={{
           '& .MuiBreadcrumbs-ol': {
-            flexWrap: 'nowrap',
+            flexWrap: allowWrap ? 'wrap' : 'nowrap',
           },
           '& .MuiBreadcrumbs-li': {
             minWidth: 0, // Allow items to shrink
@@ -211,7 +237,8 @@ const CategoryBreadcrumb: React.FC<CategoryBreadcrumbProps> = ({
             alignItems: 'center',
             gap: 0.5,
             mt: 0.5,
-            fontSize: '0.7em'
+            fontSize: '0.7em',
+            flexWrap: allowWrap ? 'wrap' : 'nowrap'
           }}
         >
           <FilterIcon sx={{ fontSize: '1em' }} />
